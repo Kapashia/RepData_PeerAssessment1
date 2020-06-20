@@ -8,18 +8,28 @@ output:
 
 ## Loading and preprocessing the data
 
-
+dataset <- read.csv('activity.csv')
+dataset_by_day <- aggregate(dataset$steps, by=list(dataset$date), sum)
 
 ## What is mean total number of steps taken per day?
 
-
+mean(dataset_by_day$x, na.rm = T) #10766.19
 
 ## What is the average daily activity pattern?
 
-
+#we first find the maximum number of steps and store it in max_steps
+max_steps <- max(dataset$steps, na.rm = T)
+#then use this value to find the interval
+max_interval <- dataset$interval[dataset$steps==max_steps]
+sum(max_interval, na.rm = T) #615
 
 ## Imputing missing values
 
-
+dataset_imputed <- dataset
+dataset_imputed$steps[is.na(dataset_imputed$steps)] <- mean(dataset$steps, na.rm = T)
+summary(dataset_imputed)
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Yes, according to the plots
+

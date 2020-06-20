@@ -1,0 +1,125 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+Courser Reproducible Research Week 2 Project
+============================================
+
+First, let's read the data. And then let's look at the first 20 observations
+
+```{r}
+dataset <- read.csv('activity.csv')
+head(dataset,20)
+```
+
+Ok, how much data we have?
+
+```{r}
+dim(dataset)
+```
+
+Fine, how does the data look like
+
+```{r}
+summary(dataset)
+str(dataset)
+```
+
+Great, let's explore it then!
+
+Let's see a histogram of daily steps. We will need to:
+- Aggregate the 'steps' column to the 'date' column so we have total steps per day
+- Afterwards, we will plot a histogram with BaseR
+
+```{r}
+dataset_by_day <- aggregate(dataset$steps, by=list(dataset$date), sum)
+hist(dataset_by_day$x, 
+        xlab = 'Steps Per Day', 
+        main = 'Histogram of Steps Per Day', 
+        ylab = 'Days')
+```
+
+Cool, now let's compute the mean and median of steps taken per day
+
+```{r}
+mean(dataset_by_day$x, na.rm = T)
+median(dataset_by_day$x, na.rm = T)
+```
+
+Now, we would like to see a time-series of the average steps taken per day.
+First we create another dataset with average number of steps per day, then plot!
+
+```{r}
+dataset_avg_by_day <- aggregate(dataset$steps, by=list(dataset$date), mean)
+dataset_avg_by_day$Group.1 <- as.Date(dataset_avg_by_day$Group.1)
+plot(dataset_avg_by_day, 
+     xlab='Time', 
+     ylab='Average Steps', 
+     main='Average Steps Per Day')
+lines(dataset_avg_by_day)
+```
+
+Let's find the 5-minute interval that has the maximum number of steps
+
+```{r}
+#we first find the maximum number of steps and store it in max_steps
+max_steps <- max(dataset$steps, na.rm = T)
+#then use this value to find the interval
+max_interval <- dataset$interval[dataset$steps==max_steps]
+sum(max_interval, na.rm = T)
+```
+
+There are lots of missing value. It is a good idea to replace missing values by the mean
+
+```{r}
+dataset_imputed <- dataset
+dataset_imputed$steps[is.na(dataset_imputed$steps)] <- mean(dataset$steps, na.rm = T)
+summary(dataset_imputed)
+```
+
+Now, let's re-visit the histogram
+```{r}
+dataset_imputed_by_day <- aggregate(dataset_imputed$steps, by=list(dataset_imputed$date), sum)
+hist(dataset_imputed_by_day$x, 
+        xlab = 'Steps Per Day', 
+        main = 'Histogram of Steps Per Day', 
+        ylab = 'Days')
+```
+
+Let's make a time-series for the steps once for weekdays and once for weekends
+
+```{r}
+dataset_with_day_names <- dataset_imputed
+dataset_with_day_names$dayname <- weekdays(as.Date(dataset_with_day_names$date))
+dataset_weekends <- dataset_with_day_names[dataset_with_day_names$dayname == 'Friday' | 
+                                             dataset_with_day_names$dayname == 'Saturday',]
+dataset_weekdays <- dataset_with_day_names[dataset_with_day_names$dayname == 'Sunday'| 
+                                           dataset_with_day_names$dayname == 'Monday' |
+                                             dataset_with_day_names$dayname == 'Tuesday'|
+                                             dataset_with_day_names$dayname == 'Wednesday'|
+                                             dataset_with_day_names$dayname == 'Thursday', ]
+dim(dataset_weekdays)
+dim(dataset_weekends)
+head(dataset_weekdays)
+head(dataset_weekends)
+dataset_weekdays_avg <- aggregate(dataset_weekdays$steps, by=list(dataset_weekdays$date), mean)
+dataset_weekends_avg <- aggregate(dataset_weekends$step, by=list(dataset_weekends$date), mean)
+head(dataset_weekdays_avg)
+head(dataset_weekends_avg)
+dataset_weekdays_avg$Group.1 <- as.Date(dataset_weekdays_avg$Group.1)
+dataset_weekends_avg$Group.1 <- as.Date(dataset_weekends_avg$Group.1)
+```
+
+That was lots of preparing!
+Now the plot
+
+```{r fig.height=10}
+par(mfrow=c(2,1))
+plot(dataset_weekdays_avg, xlab = 'Days', ylab = 'Average Steps',
+     main = 'Average Steps in Weekdays')
+lines(dataset_weekdays_avg)
+plot(dataset_weekends_avg, xlab = 'Days', ylab = 'Average Steps',
+     main = 'Average Steps in Weekends')
+lines(dataset_weekends_avg)
+```
